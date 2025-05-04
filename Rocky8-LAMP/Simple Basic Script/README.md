@@ -32,3 +32,13 @@ Script is free to use for anybody in commercial and personal enviorment.
 
 Enjoy the script
 (this is basic very light webserver configuration).
+
+
+to execute the script
+download to server or copy and paste using vim text editor in linux server or other.
+
+create a file for example: "vim script.sh" (on server) as root.
+copy and paste the code in file then save it ":wq"
+then change permission "chmod +x script.sh"
+modify domain name in file
+execute the script "./script.sh"
