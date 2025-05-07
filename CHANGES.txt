@@ -1,0 +1,5 @@
+2025-05-07:
+
+- Added a note indicating the link to download Rocky Linux 8.10
+- Added a sh function to detect is selinux is installed and active
+- Added a sh function to detect is a service is active

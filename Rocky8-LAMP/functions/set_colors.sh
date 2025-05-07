@@ -1,0 +1,4 @@
+#!/bin/sh
+COLOR_GREEN="\033[0;32m"
+COLOR_RED="\033[0;31m"
+COLOR_NAN="\033[0m"

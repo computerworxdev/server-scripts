@@ -1,0 +1,2 @@
+Link to download Rocky Linux 8.10 (minimal)
+https://download.rockylinux.org/pub/rocky/8/isos/x86_64/Rocky-8.10-x86_64-minimal.iso
