@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Bash Script for Setting Up a LAMP Stack with Additional Services simple edition v1
+# Bash Script for Setting Up a Web Stack with Additional Services simple edition v1
 # This script installs and configures Apache, PHP, vsftpd and SSL certificates using Certbot.
 # Applicable for RHEL/CentOS 8/9 and similar distributions.
 
