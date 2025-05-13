@@ -1,11 +1,11 @@
 #!/bin/sh
 
 # pre-conditions
-. set_colors.sh
+. messages.sh
 
 is_selinux_active() {
     if ! command -v getenforce &> /dev/null; then
-        echo -e "${COLOR_RED}selinux is not installed${COLOR_NAN}"
+        alert "selinux is not installed"
         return 1
     fi
 
@@ -13,10 +13,10 @@ is_selinux_active() {
     status=$(getenforce)
 
     if [[ "$status" == "Enforcing" || "$status" == "Permissive" ]]; then
-        echo -e "${COLOR_GREEN}selinux is installed and active${COLOR_NAN}"
+        success "selinux is installed and active"
         return 0
     else
-        echo -e "${COLOR_RED}selinux is installed but disabled${COLOR_NAN}"
+        alert "selinux is installed but disabled$"
         return 2
     fi
 }
