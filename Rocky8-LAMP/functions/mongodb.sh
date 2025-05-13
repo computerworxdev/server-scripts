@@ -24,7 +24,7 @@ EOF
     if [ ! -f "/etc/mongod.conf.bak" ]; then
         cp /etc/mongod.conf /etc/mongod.conf.bak
     fi
-    sed -i '/^#security:/a \ authorization: enabled' /etc/mongod.conf
+    sed -i '/^security:/a \ authorization: enabled' /etc/mongod.conf
     systemctl enable mongod
     systemctl start mongod
     sleep 30
@@ -35,6 +35,11 @@ EOF
 }
 
 create_mongodb_root_user() {
+    if [ "$#" -ne 2 ]; then
+        alert "Incorrect number of parameters"
+        echo "Provide: username and password"
+        return 1
+    fi
 MONGOUSERCONFIG=$(cat <<EOF
 use admin
 db.createUser({

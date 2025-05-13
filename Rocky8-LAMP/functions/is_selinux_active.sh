@@ -3,6 +3,7 @@
 # pre-conditions
 . messages.sh
 
+# Checks if selinux is active
 is_selinux_active() {
     if ! command -v getenforce &> /dev/null; then
         alert "selinux is not installed"

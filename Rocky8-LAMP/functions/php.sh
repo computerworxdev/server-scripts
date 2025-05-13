@@ -2,11 +2,9 @@
 
 . is_service_installed.sh
 
-SERVICE=php
-
 install_php() {
-    if is_service_installed $SERVICE; then
-        alert "$SERVICE is already installed"
+    if is_service_installed php ; then
+        alert "php is already installed"
         return 1
     fi
 

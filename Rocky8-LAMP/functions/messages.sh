@@ -2,6 +2,8 @@
 
 . set_colors.sh
 
+# Message Functions
+
 alert() {
 	echo -e "${COLOR_RED}$1${COLOR_NAN}"
 }

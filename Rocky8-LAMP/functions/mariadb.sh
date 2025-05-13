@@ -5,9 +5,9 @@
 . is_service_installed.sh
 . ask_yes_no.sh
 
-SERVICE=mariadb
 
 install_mariadb() {
+SERVICE=mariadb
     if is_service_installed  $SERVICE-server; then
         alert "$SERVICE is already installed"
         return 1

@@ -10,3 +10,8 @@
 - Draft for mongodb (not working yet)
 - apache, firewalld and others refactored
 - support functions like ask_yes_no
+
+2025-05-19:
+
+- New functions added: fail2ban, mongodb
+- LampV9 with cleanup

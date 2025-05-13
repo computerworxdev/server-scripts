@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Utility function to ask yes/no questions
+# It keeps asking until the user gives a valid answer
 ask_yes_no() {
     local prompt="${1:-Are you sure?}"
     [[ "$2" == "-y" || "$2" == "--yes" ]] && return 0
