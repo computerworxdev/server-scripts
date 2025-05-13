@@ -3,3 +3,10 @@
 - Added a note indicating the link to download Rocky Linux 8.10
 - Added a sh function to detect is selinux is installed and active
 - Added a sh function to detect is a service is active
+
+2025-05-13:
+
+- New functions added: vsftp, php, phpmyadmin, user, mariadb
+- Draft for mongodb (not working yet)
+- apache, firewalld and others refactored
+- support functions like ask_yes_no

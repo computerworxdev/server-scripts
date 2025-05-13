@@ -1,0 +1,13 @@
+DiGraph Dependencies {
+    create_group -> create_user;
+	epel -> httpd;
+	epel -> firewalld;
+    epel -> mariadb;
+    httpd -> phpmyadmin;
+    mariadb -> phpmyadmin;
+    php -> phpmyadmin;
+    epel -> vsftpd;
+    vsftpd -> add_vsftpd_user;
+    vsftpd -> is_vsftpd_active;
+
+}
