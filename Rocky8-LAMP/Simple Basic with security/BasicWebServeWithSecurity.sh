@@ -283,5 +283,5 @@ echo "Password: $WEB_PASS"
 
 
 echo ""
-echo "LAMP stack with MongoDB and FTP setup is complete with SSL support for domain $PRIMARY_DOMAIN."
+echo "LAMP stack with FTP setup is complete with SSL support for domain $PRIMARY_DOMAIN."
 echo "========================================="
