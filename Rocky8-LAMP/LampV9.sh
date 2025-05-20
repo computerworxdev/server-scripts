@@ -530,6 +530,8 @@ EOF
     echo "$MONGOUSERCONFIG" | mongosh
 }
 
+# Main script execution
+
 safe_exec install_epel
 safe_exec install_firewalld
 safe_exec install_apache
@@ -542,6 +544,7 @@ safe_exec install_mariadb
 safe_exec install_phpmyadmin
 safe_exec install_vsftpd
 safe_exec add_vsftpd_user $USER
-is_vsftpd_active
+is_vsftpd_active $USER $PASSWORD ftp://localhost
 safe_exec install_fail2ban
 safe_exec install_mongodb
+safe_exec create_mongodb_root_user $USER $PASSWORD
