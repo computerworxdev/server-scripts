@@ -47,6 +47,12 @@ install_apache() {
 }
 
 create_apache_domain() {
+    local caller="${FUNCNAME[0]}"
+    local help_text="Usage: $caller DOMAINNAME"
+    if ! number_of_parameters 1 $# "$help_text"; then
+        return 1
+    fi
+
     if [ "$#" -ne 1 ]; then
         alert "Incorrect number of parameters"
         echo "Provide domain name"

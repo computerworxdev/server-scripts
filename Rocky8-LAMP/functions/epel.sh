@@ -2,10 +2,9 @@
 
 . messages.sh
 
-EPEL9=https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
-EPEL8=https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-
 install_epel() {
+    local EPEL9=https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+    local EPEL8=https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
     if rpm -q epel-release &>/dev/null; then
 	    success "EPEL is already installed."
 	    return 0

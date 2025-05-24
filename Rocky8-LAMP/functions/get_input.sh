@@ -48,4 +48,7 @@ get_input() {
       esac
     done
   fi
+  echo "$input"
 }
+
+

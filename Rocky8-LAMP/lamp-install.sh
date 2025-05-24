@@ -3,11 +3,6 @@
 # LAMP v9
 # (c) Computer-worx 2025
 
-WEBDOMAIN="example.com"
-USER="webadmin"
-GROUP="webadmin"
-PASSWORD="webadmin"
-
 COLOR_GREEN="\033[0;32m"
 COLOR_RED="\033[0;31m"
 COLOR_NAN="\033[0m"
@@ -27,6 +22,19 @@ bold() {
 	echo -e "${COLOR_YELLOW}$1${COLOR_NAN}"
 }
 
+banner() {
+    local message="$1"
+    local border_char="${2:-=}"
+    local padding=4
+    local border_length=$(( ${#message} + padding ))
+
+    printf "\n"
+    printf "%${border_length}s\n" | tr ' ' "$border_char"
+    printf "%s%s%s\n" "$border_char" " $message " "$border_char"
+    printf "%${border_length}s\n" | tr ' ' "$border_char"
+    printf "\n"
+}
+
 # Utility function to ask yes/no questions
 # It keeps asking until the user gives a valid answer
 ask_yes_no() {
@@ -43,13 +51,87 @@ ask_yes_no() {
     done
 }
 
+get_input() {
+  local prompt=" "
+  local skip_confirm=false
+
+  # Parse arguments
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -y|--yes)
+        skip_confirm=true
+        shift
+        ;;
+      *)
+        prompt="$1"
+        shift
+        ;;
+    esac
+  done
+
+  local input=""
+  while [[ -z "$input" ]]; do
+    read -p "$prompt " input
+    if [[ -z "$input" ]]; then
+      alert "Input cannot be empty. Try again."
+    fi
+  done
+
+  # Confirm if not skipping confirmation
+  if ! $skip_confirm; then
+    while true; do
+	    read -p "you entered: '$input'. Confirm? (y/n): " confirm
+      case "$confirm" in
+        [Yy]*) break ;;
+        [Nn]*) 
+          input=""
+          while [[ -z "$input" ]]; do
+            read -p "$prompt " input
+            if [[ -z "$input" ]]; then
+              alert "Input cannot be empty. Try again."
+            fi
+          done
+          ;;
+        *) "Please answer y or n." ;;
+      esac
+    done
+  fi
+  echo "$input"
+}
+
+
+number_of_parameters() {
+    local caller="${FUNCNAME[1]}"
+    local expected="$1"
+    local actual="$2"
+    local help_text="$3"
+
+    if [ "$actual" -ne "$expected" ]; then
+        alert "error: $caller expected $expected parameters, but got $actual."
+        echo "$help_text"
+        return 1
+    fi
+}
+
 # Checks if service is installed
 is_service_installed() {
+    local caller="${FUNCNAME[0]}"
+    local help_text="Usage: $caller SERVICENAME"
+    if ! number_of_parameters 1 $# "$help_text"; then
+        return 1
+    fi
+
 	dnf list installed $1 &> /dev/null
 }
 
 # Checks if service is active
 is_service_active() {
+    local caller="${FUNCNAME[0]}"
+    local help_text="Usage: $caller SERVICENAME"
+    if ! number_of_parameters 1 $# "$help_text"; then
+        return 1
+    fi
+
     local service="$1"
     if systemctl is-active --quiet "$service"; then
         success "$service is active"
@@ -82,6 +164,12 @@ safe_exec() {
 }
 
 create_group() {
+    local caller="${FUNCNAME[0]}"
+    local help_text="Usage: $caller GROUPNAME"
+    if ! number_of_parameters 1 $# "$help_text"; then
+        return 1
+    fi
+
     if getent group $1 > /dev/null; then
         alert "$1 group alread exists"
         return 1
@@ -90,11 +178,12 @@ create_group() {
 }
 
 create_user() {
-    if [ "$#" -ne 3 ]; then
-        alert "Incorrect number of parameters"
-        echo "Provide: username password and group"
+    local caller="${FUNCNAME[0]}"
+    local help_text="Usage: $caller USERNAME PASSWORD GROUPNAME"
+    if ! number_of_parameters 3 $# "$help_text"; then
         return 1
     fi
+
     if id -u $1 > /dev/null; then
         alert "$1 user already exists"
         return 1
@@ -136,13 +225,36 @@ install_epel() {
 }
 
 add_firewall_service() {
+    local caller="${FUNCNAME[0]}"
+    local help_text="Usage: $caller SERVICE_NAME"
+    if ! number_of_parameters 1 $# "$help_text"; then
+        return 1
+    fi
+
 	local service=$1
 	if firewall-cmd --permanent --add-service="$service"; then
+        firewall-cmd --reload
 		success "firewalld successfully added $service"
 	else
 		alert "firewalld failed to add $service"
 		return 1
 	fi
+}
+
+add_firewall_port() {
+    local caller="${FUNCNAME[0]}"
+    local help_text="Usage: $caller PORT_NUMBER/PROTOCOL"
+    if ! number_of_parameters 1 $# "$help_text"; then
+        return 1
+    fi
+
+    local port=$1
+    if firewall-cmd --permanent --add-port="$port"; then
+        firewall-cmd --reload
+        success "firewalld successfully added port $port"
+    else
+        alert "firewalld failed to add port $port"
+    fi
 }
 
 install_firewalld() {
@@ -179,11 +291,14 @@ install_mod_ssl() {
 # Install mod_ssl and enable mod_rewrite
 	dnf install -y mod_ssl
 
+	# Create a backup of the httpd configuration file
 	cp /etc/httpd/conf/httpd.conf /etc/httpd/conf/httpd.conf.bak
 
+	# If a line to load the rewrite module doesn't exist, append it
 	grep -q 'LoadModule rewrite_module' /etc/httpd/conf/httpd.conf \
 	  || echo 'LoadModule rewrite_module modules/mod_rewrite.so' >> /etc/httpd/conf/httpd.conf
 
+	# If a line to load the rewrite module exists but is commented, uncomment it
 	sed -i '/LoadModule rewrite_module/s/^#//g' /etc/httpd/conf/httpd.conf
 }
 
@@ -210,6 +325,12 @@ install_apache() {
 }
 
 create_apache_domain() {
+    local caller="${FUNCNAME[0]}"
+    local help_text="Usage: $caller DOMAINNAME"
+    if ! number_of_parameters 1 $# "$help_text"; then
+        return 1
+    fi
+
     if [ "$#" -ne 1 ]; then
         alert "Incorrect number of parameters"
         echo "Provide domain name"
@@ -374,6 +495,7 @@ ssl_ciphers=HIGH
 # Turn off SSL reuse
 require_ssl_reuse=NO
 #Passive FTP ports can be allocated a minimum and maximum range for data connections.
+pasv_enable=YES
 pasv_min_port=40000
 pasv_max_port=40001
 #Setting up SSL debug
@@ -381,9 +503,9 @@ debug_ssl=YES
 EOF
 )
 
-
 install_vsftpd() {
-SERVICE=vsftpd
+    local SERVICE=vsftpd
+
     if is_service_installed $SERVICE; then
         alert "$SERVICE is already installed"
         return 1
@@ -392,6 +514,7 @@ SERVICE=vsftpd
     dnf install -y vsftpd
     cp -f /etc/vsftpd/vsftpd.conf /etc/vsftpd/vsftpd.conf.bak
     echo "$FTPCONFIG" > /etc/vsftpd/vsftpd.conf
+
     setsebool -P ftpd_full_access 1
     systemctl enable vsftpd
     systemctl start vsftpd
@@ -402,14 +525,60 @@ SERVICE=vsftpd
     fi
 }
 
+create_vsftpd_certificate() {
+    rm -rf /etc/ssl/vsftpd
+    mkdir /etc/ssl/vsftpd
+    openssl req -x509 -nodes \
+        -keyout /etc/ssl/vsftpd/vsftpd-selfsigned.key \
+        -out /etc/ssl/vsftpd/vsftpd-selfsigned.crt \
+        -days 365 -newkey rsa:2048 \
+        -subj "/C=US/ST=CA/L=SilliconValley/O=Organization/OU=OrgUnit/CN=localhost"
+}
+
+install_secure_vsftpd() {
+    local SERVICE=vsftpd
+
+    if is_service_installed $SERVICE; then
+        alert "$SERVICE is already installed"
+        return 1
+    fi
+
+    dnf install -y vsftpd
+    create_vsftpd_certificate
+    cp -f /etc/vsftpd/vsftpd.conf /etc/vsftpd/vsftpd.conf.bak
+    echo "$FTPCONFIG_SSL" > /etc/vsftpd/vsftpd.conf
+    
+    setsebool -P ftpd_full_access 1
+    systemctl enable vsftpd
+    systemctl start vsftpd
+
+    # Activating pasive ports
+    local start="40000"
+    local end="40001"
+    for (( i=start; i<=end; i++ )); do
+        add_firewall_port "$i/tcp"
+    done
+
+    if ! is_service_active $SERVICE; then
+        alert "$SERVICE is not working properly"
+        return 1
+    fi
+}
+
 add_vsftpd_user() {
+    local caller="${FUNCNAME[0]}"
+    local help_text="Usage: $caller USERNAME"
+    if ! number_of_parameters 1 $# "$help_text"; then
+        return 1
+    fi
+
     echo "$1" | tee -a /etc/vsftpd/user_list >/dev/null
 }
 
 is_vsftpd_active() {
-    if [ "$#" -ne 3 ]; then
-        alert "Incorrect number of parameters"
-        echo "Provide: username password and host"
+    local caller="${FUNCNAME[0]}"
+    local help_text="Usage: $caller USERNAME PASSWORD HOSTNAME"
+    if ! number_of_parameters 3 $# "$help_text"; then
         return 1
     fi
 
@@ -417,6 +586,7 @@ is_vsftpd_active() {
         dnf -y install lftp
     fi
 
+    echo "Trying to connect to the ftp server... (press Ctrl+c to abort)"
     if lftp -u "$1","$2" "$3" -e "ls; bye" >/dev/null 2>&1; then
         success "FTP server is responding"
     else
@@ -532,19 +702,70 @@ EOF
 
 # Main script execution
 
+banner "Server Configuration"
+
+WEBDOMAIN="example.com"
+USER="webadmin"
+GROUP="webadmin"
+PASSWORD="webadmin"
+
+success "Default variables:"
+echo "webdomain: $WEBDOMAIN"
+echo "username: $USER"
+echo "password: $PASSWORD"
+echo "group: $GROUP"
+
+if ! ask_yes_no "Do you like to use the default variables?"; then
+    WEBDOMAIN=$(get_input "webdomain:")
+    USER=$(get_input "username:")
+    PASSWORD=$(get_input "password:")
+    GROUP=$(get_input "group:")
+
+    success "Defined variables:"
+    echo "webdomain: $WEBDOMAIN"
+    echo "username: $USER"
+    echo "password: $PASSWORD"
+    echo "group: $GROUP"
+fi
+
+banner "Installing EPEL repository"
 safe_exec install_epel
+
+banner "Installing firewalld"
 safe_exec install_firewalld
+
+banner "Installing apache"
 safe_exec install_apache
+safe_exec is_apache_responding
 safe_exec create_apache_domain $WEBDOMAIN
 safe_exec create_group $GROUP
 safe_exec create_user $USER $PASSWORD $GROUP
 chown -R $USER:$GROUP /var/www
+
+banner "Installing php"
 safe_exec install_php
+
+banner "Installing mariadb"
 safe_exec install_mariadb
+
+banner "Installing phpmyadmin"
 safe_exec install_phpmyadmin
-safe_exec install_vsftpd
+
+banner "Installing vsftpd"
+safe_exec install_secure_vsftpd
 safe_exec add_vsftpd_user $USER
-is_vsftpd_active $USER $PASSWORD ftp://localhost
+
+banner "Installing fail2ban"
 safe_exec install_fail2ban
+
+banner "Installing mongodb"
 safe_exec install_mongodb
 safe_exec create_mongodb_root_user $USER $PASSWORD
+
+banner "Summary"
+is_service_active firewalld
+is_service_active httpd
+is_service_active mariadb
+is_service_active vsftpd
+is_service_active fail2ban
+is_service_active mongod

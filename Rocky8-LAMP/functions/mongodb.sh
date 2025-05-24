@@ -35,11 +35,12 @@ EOF
 }
 
 create_mongodb_root_user() {
-    if [ "$#" -ne 2 ]; then
-        alert "Incorrect number of parameters"
-        echo "Provide: username and password"
+    local caller="${FUNCNAME[0]}"
+    local help_text="Usage: $caller USERNAME PASSWORD"
+    if ! number_of_parameters 2 $# "$help_text"; then
         return 1
     fi
+
 MONGOUSERCONFIG=$(cat <<EOF
 use admin
 db.createUser({

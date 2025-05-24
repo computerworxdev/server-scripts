@@ -3,6 +3,8 @@
 . messages.sh
 . is_service_installed.sh
 . is_service_active.sh
+. number_of_parameters.sh
+. firewalld.sh
 
 FTPCONFIG=$(cat <<EOF
 anonymous_enable=NO
@@ -61,6 +63,7 @@ ssl_ciphers=HIGH
 # Turn off SSL reuse
 require_ssl_reuse=NO
 #Passive FTP ports can be allocated a minimum and maximum range for data connections.
+pasv_enable=YES
 pasv_min_port=40000
 pasv_max_port=40001
 #Setting up SSL debug
@@ -68,9 +71,9 @@ debug_ssl=YES
 EOF
 )
 
-SERVICE=vsftpd
 
 install_vsftpd() {
+    local SERVICE=vsftpd
 
     if is_service_installed $SERVICE; then
         alert "$SERVICE is already installed"
@@ -80,6 +83,7 @@ install_vsftpd() {
     dnf install -y vsftpd
     cp -f /etc/vsftpd/vsftpd.conf /etc/vsftpd/vsftpd.conf.bak
     echo "$FTPCONFIG" > /etc/vsftpd/vsftpd.conf
+
     setsebool -P ftpd_full_access 1
     systemctl enable vsftpd
     systemctl start vsftpd
@@ -100,35 +104,50 @@ create_vsftpd_certificate() {
         -subj "/C=US/ST=CA/L=SilliconValley/O=Organization/OU=OrgUnit/CN=localhost"
 }
 
-# TODO: Not working yet
 install_secure_vsftpd() {
+    local SERVICE=vsftpd
+
     if is_service_installed $SERVICE; then
         alert "$SERVICE is already installed"
         return 1
     fi
+
     dnf install -y vsftpd
     create_vsftpd_certificate
     cp -f /etc/vsftpd/vsftpd.conf /etc/vsftpd/vsftpd.conf.bak
     echo "$FTPCONFIG_SSL" > /etc/vsftpd/vsftpd.conf
+    
     setsebool -P ftpd_full_access 1
     systemctl enable vsftpd
     systemctl start vsftpd
+
+    # Activating pasive ports
+    local start="40000"
+    local end="40001"
+    for (( i=start; i<=end; i++ )); do
+        add_firewall_port "$i/tcp"
+    done
 
     if ! is_service_active $SERVICE; then
         alert "$SERVICE is not working properly"
         return 1
     fi
-
 }
 
 add_vsftpd_user() {
+    local caller="${FUNCNAME[0]}"
+    local help_text="Usage: $caller USERNAME"
+    if ! number_of_parameters 1 $# "$help_text"; then
+        return 1
+    fi
+
     echo "$1" | tee -a /etc/vsftpd/user_list >/dev/null
 }
 
 is_vsftpd_active() {
-    if [ "$#" -ne 3 ]; then
-        alert "Incorrect number of parameters"
-        echo "Provide: username password and host"
+    local caller="${FUNCNAME[0]}"
+    local help_text="Usage: $caller USERNAME PASSWORD HOSTNAME"
+    if ! number_of_parameters 3 $# "$help_text"; then
         return 1
     fi
 
@@ -136,6 +155,7 @@ is_vsftpd_active() {
         dnf -y install lftp
     fi
 
+    echo "Trying to connect to the ftp server... (press Ctrl+c to abort)"
     if lftp -u "$1","$2" "$3" -e "ls; bye" >/dev/null 2>&1; then
         success "FTP server is responding"
     else
