@@ -3,6 +3,8 @@
 # LAMP v9
 # (c) Computer-worx 2025
 
+# Save everything that is shown on the screen to a file
+
 COLOR_GREEN="\033[0;32m"
 COLOR_RED="\033[0;31m"
 COLOR_NAN="\033[0m"
@@ -700,6 +702,30 @@ EOF
     echo "$MONGOUSERCONFIG" | mongosh
 }
 
+is_certbot_renew_scheduled() {
+    if ! systemctl list-timers | grep certbot; then
+        return 1
+    fi
+}
+
+install_certbot() {
+    local caller="${FUNCNAME[0]}"
+    local help_text="Usage: $caller DOMAINNAME"
+    if ! number_of_parameters 1 $# "$help_text"; then
+        return 1
+    fi
+
+    if ! is_service_installed certbot; then
+        dnf install -y certbot python3-certbot-apache
+    fi
+
+    # certbot --apache -d $1 --agree-tos -m admin@$1 --non-interactive --redirect --dry-run
+    
+    if ! is_certbot_renew_scheduled; then
+        echo "0 2 * * * root certbot renew --quiet" > /etc/cron.d/certbot-renew
+    fi
+}
+
 # Main script execution
 
 banner "Server Configuration"
@@ -728,44 +754,49 @@ if ! ask_yes_no "Do you like to use the default variables?"; then
     echo "group: $GROUP"
 fi
 
-banner "Installing EPEL repository"
-safe_exec install_epel
+{
+    banner "Installing EPEL repository"
+    safe_exec install_epel
 
-banner "Installing firewalld"
-safe_exec install_firewalld
+    banner "Installing firewalld"
+    safe_exec install_firewalld
 
-banner "Installing apache"
-safe_exec install_apache
-safe_exec is_apache_responding
-safe_exec create_apache_domain $WEBDOMAIN
-safe_exec create_group $GROUP
-safe_exec create_user $USER $PASSWORD $GROUP
-chown -R $USER:$GROUP /var/www
+    banner "Installing apache"
+    safe_exec install_apache
+    safe_exec is_apache_responding
+    safe_exec create_apache_domain $WEBDOMAIN
+    safe_exec create_group $GROUP
+    safe_exec create_user $USER $PASSWORD $GROUP
+    chown -R $USER:$GROUP /var/www
 
-banner "Installing php"
-safe_exec install_php
+    banner "Installing php"
+    safe_exec install_php
 
-banner "Installing mariadb"
-safe_exec install_mariadb
+    banner "Installing mariadb"
+    safe_exec install_mariadb
 
-banner "Installing phpmyadmin"
-safe_exec install_phpmyadmin
+    banner "Installing phpmyadmin"
+    safe_exec install_phpmyadmin
 
-banner "Installing vsftpd"
-safe_exec install_secure_vsftpd
-safe_exec add_vsftpd_user $USER
+    banner "Installing vsftpd"
+    safe_exec install_secure_vsftpd
+    safe_exec add_vsftpd_user $USER
 
-banner "Installing fail2ban"
-safe_exec install_fail2ban
+    banner "Installing fail2ban"
+    safe_exec install_fail2ban
 
-banner "Installing mongodb"
-safe_exec install_mongodb
-safe_exec create_mongodb_root_user $USER $PASSWORD
+    banner "Installing mongodb"
+    safe_exec install_mongodb
+    safe_exec create_mongodb_root_user $USER $PASSWORD
 
-banner "Summary"
-is_service_active firewalld
-is_service_active httpd
-is_service_active mariadb
-is_service_active vsftpd
-is_service_active fail2ban
-is_service_active mongod
+    banner "Certbot configuration"
+    # safe_exec install_certbot $WEBDOMAIN
+
+    banner "Summary"
+    is_service_active firewalld
+    is_service_active httpd
+    is_service_active mariadb
+    is_service_active vsftpd
+    is_service_active fail2ban
+    is_service_active mongod
+} 2>&1 | tee -a output.log

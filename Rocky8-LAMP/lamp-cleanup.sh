@@ -12,7 +12,7 @@ dnf remove -y \
     mongodb-shell \
     fail2ban \
     vsftpd \
-    lftp
+    certbot
 
 userdel $USER
 groupdel $GROUP
