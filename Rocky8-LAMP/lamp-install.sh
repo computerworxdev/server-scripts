@@ -722,7 +722,7 @@ install_certbot() {
     # certbot --apache -d $1 --agree-tos -m admin@$1 --non-interactive --redirect --dry-run
     
     if ! is_certbot_renew_scheduled; then
-        echo "0 2 * * * root certbot renew --quiet" > /etc/cron.d/certbot-renew
+        echo "0 2 10 */1 * root certbot renew --quiet" > /etc/cron.d/certbot-renew
     fi
 }
 
