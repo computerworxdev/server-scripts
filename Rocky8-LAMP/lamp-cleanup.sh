@@ -16,3 +16,6 @@ dnf remove -y \
 
 userdel $USER
 groupdel $GROUP
+
+rm -fr /var/www
+rm -fr /opt/phpmyadmin

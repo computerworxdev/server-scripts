@@ -3,6 +3,7 @@
 . messages.sh
 . is_service_active.sh
 . uninstall_service.sh
+. number_of_parameters.sh
 
 is_apache_responding() {
 	curl -s --head "http://localhost/" | grep "HTTP" > /dev/null

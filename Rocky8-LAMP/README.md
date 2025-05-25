@@ -18,6 +18,8 @@ This project provides an automated script to install and configure a full LAMP s
   - Certbot (optional, commented out by default)
 - Creates a dedicated user and group for web administration.
 - Sets up virtual hosts and permissions.
+- At the end of the installation, a summary check is performed to ensure all
+  services are running correctly.
 - All output is displayed in the terminal and also saved to `output.log`.
 
 ## Key Features
@@ -65,5 +67,5 @@ You can define the following variables at the start of the script or interactive
 
 ## Troubleshooting & Notes
 
-- The script is intended for fresh installations. Running on a system with existing configurations may lead to unexpected results.
-- Certbot installation is included but commented out by default. Uncomment the relevant
+- The script is intended for fresh installations. Running on a system with
+  existing configurations may lead to unexpected results.

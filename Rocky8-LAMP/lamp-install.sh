@@ -790,7 +790,7 @@ fi
     safe_exec create_mongodb_root_user $USER $PASSWORD
 
     banner "Certbot configuration"
-    # safe_exec install_certbot $WEBDOMAIN
+    safe_exec install_certbot $WEBDOMAIN
 
     banner "Summary"
     is_service_active firewalld
